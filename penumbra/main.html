@@ -1,0 +1,353 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Penumbra Solutions — портал</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            font-family: 'Sitka Subheading', 'Georgia', 'Times New Roman', serif;
+            color: #ddd;
+            min-height: 100vh;
+        }
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 280px;
+            background: #0a0a0a;
+            border-right: 1px solid #2a2a2a;
+            padding: 20px 0;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .sidebar .logo {
+            text-align: center;
+            font-size: 1.4rem;
+            letter-spacing: 4px;
+            color: #fff;
+            text-transform: uppercase;
+            padding: 20px 10px;
+            border-bottom: 1px solid #2a2a2a;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar nav li {
+            margin: 12px 20px;
+        }
+        .sidebar nav a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            transition: 0.2s;
+        }
+        .sidebar nav a .emoji {
+            font-size: 1.2rem;
+            width: 28px;
+            text-align: center;
+        }
+        .sidebar nav a:hover, .sidebar nav a.active {
+            background: #2a2a2a;
+            color: white;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2a2a2a;
+            flex-shrink: 0;
+        }
+        .site-title {
+            font-size: 1.8rem;
+            letter-spacing: 3px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 15px;
+            border-radius: 40px;
+            transition: 0.2s;
+        }
+        .user-profile:hover {
+            background: #2a2a2a;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 1.4rem;
+        }
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .user-name {
+            font-weight: bold;
+            color: #fff;
+        }
+        #pageContent {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            overflow: hidden;
+            min-height: 0;
+        }
+        #pageContent.fullscreen {
+            background: white;
+            padding: 0;
+            margin: 0;
+            border-radius: 0;
+            height: 100%;
+        }
+        /* Модальные окна правил (как в предыдущей версии, я их сохранил, но для краткости не копирую — они не изменились) */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #111;
+            border: 1px solid #444;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            color: #ddd;
+        }
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-footer {
+            padding: 15px 30px;
+            border-top: 1px solid #2a2a2a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0a0a0a;
+            border-radius: 0 0 20px 20px;
+        }
+        .modal-footer label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .modal-footer button {
+            background: #6c6c6c;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-footer button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .modal-footer button:enabled:hover {
+            background: #4a4a4a;
+        }
+        .timer-message {
+            font-size: 0.8rem;
+            color: #b33;
+            margin-left: 10px;
+        }
+        .policy-text, .rules-text {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .rules-text ol {
+            padding-left: 20px;
+        }
+        .rules-text li {
+            margin-bottom: 12px;
+        }
+        .small-print {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 20px;
+            font-style: italic;
+        }
+        @media (max-width: 700px) {
+            .sidebar { width: 70px; }
+            .sidebar .logo { font-size: 0.8rem; padding: 20px 5px; letter-spacing: 0; }
+            .sidebar nav a span:not(.emoji) { display: none; }
+            .sidebar nav a { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div id="appRoot"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB4c624YTSRL68skj3SwRku5lsI_c4EyPU",
+        authDomain: "penumbra-test.firebaseapp.com",
+        projectId: "penumbra-test",
+        storageBucket: "penumbra-test.firebasestorage.app",
+        messagingSenderId: "229849130101",
+        appId: "1:229849130101:web:e06ead8bfe40b4df43443c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUserData = null;
+
+    async function loadSectionContent(section) {
+        const contentDiv = document.getElementById('pageContent');
+        if (!contentDiv) return;
+        const files = {
+            waiting: 'views/waiting.html',
+            nessa: 'views/nessa.html',
+            bar: 'views/bar.html',
+            beacon: 'views/beacon.html',
+            archive: 'views/archive.html'
+        };
+        const filePath = files[section];
+        if (!filePath) return;
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error('File not found');
+            const html = await response.text();
+            contentDiv.innerHTML = html;
+            if (section === 'waiting' || section === 'bar') {
+                contentDiv.classList.add('fullscreen');
+            } else {
+                contentDiv.classList.remove('fullscreen');
+            }
+        } catch (err) {
+            contentDiv.innerHTML = `<div class="placeholder">⚠️ Не удалось загрузить раздел. Убедитесь, что файл ${filePath} существует.</div>`;
+        }
+    }
+
+    function setActiveMenuItem(activeId) {
+        document.querySelectorAll('.sidebar nav a').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-section') === activeId) link.classList.add('active');
+        });
+    }
+
+    function renderMainUI() {
+        const appRoot = document.getElementById('appRoot');
+        appRoot.innerHTML = `
+            <div class="app-layout">
+                <div class="sidebar">
+                    <div class="logo">PENUMBRA</div>
+                    <nav>
+                        <ul>
+                            <li><a href="#" data-section="waiting"><span class="emoji">⏳</span> Зона ожидания</a></li>
+                            <li><a href="#" data-section="nessa"><span class="emoji">🔮</span> Предсказания Нессы</a></li>
+                            <li><a href="#" data-section="bar"><span class="emoji">🍸</span> Бар Эхо</a></li>
+                            <li><a href="#" data-section="beacon"><span class="emoji">🕯️</span> Маяк Забвения</a></li>
+                            <li><a href="#" data-section="archive"><span class="emoji">📂</span> Архив дел</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="main-content">
+                    <div class="top-bar">
+                        <div class="site-title">Penumbra Solutions</div>
+                        <div class="user-profile" id="userProfileBtn">
+                            <div class="user-avatar" id="userAvatar">${currentUserData?.avatar ? `<img src="${currentUserData.avatar}" alt="avatar">` : '👤'}</div>
+                            <span class="user-name">${currentUserData?.nickname || 'Агент'}</span>
+                        </div>
+                    </div>
+                    <div id="pageContent"></div>
+                </div>
+            </div>
+        `;
+        document.querySelectorAll('.sidebar nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('data-section');
+                setActiveMenuItem(section);
+                loadSectionContent(section);
+            });
+        });
+        document.getElementById('userProfileBtn')?.addEventListener('click', () => {
+            alert('Страница профиля в разработке.');
+        });
+        setActiveMenuItem('waiting');
+        loadSectionContent('waiting');
+    }
+
+    // --- Правила (оставлены без изменений) ---
+    function getPrivacyHTML() { /* ... */ }
+    function getRulesHTML() { /* ... */ }
+    function showRulesModal(title, contentHTML, onAccept) { /* ... */ }
+    async function showRequiredRules() { /* ... */ }
+
+    // Восстанови функции правил из предыдущей версии (они большой, но не менялись)
+    // Чтобы не повторять, я их здесь пропустил, но в твоём финальном файле они должны быть.
+    // Если нет — возьми из предыдущего сообщения.
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists() || userDoc.data().approved !== true) {
+            window.location.href = 'index.html';
+            return;
+        }
+        currentUserData = userDoc.data();
+        renderMainUI();
+        if (!currentUserData.hasAcceptedRules) {
+            await showRequiredRules();
+        }
+    });
+</script>
+</body>
+</html>

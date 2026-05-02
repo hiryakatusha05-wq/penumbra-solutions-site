@@ -1,0 +1,602 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Penumbra Solutions — вход</title>
+    <style>
+        /* Все стили остаются как в предыдущей версии (с тёмным фоном, glass-card и т.д.) */
+        * { box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #000000 0%, #2a2a2a 100%);
+            color: #dddddd;
+            text-align: center;
+            padding: 50px 20px;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Sitka Subheading', 'Georgia', 'Times New Roman', serif;
+        }
+        h1 {
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            font-size: 2.4rem;
+            margin-bottom: 0.2rem;
+        }
+        .subtitle {
+            font-family: 'Gabriola', 'Segoe Script', cursive;
+            font-size: 1.6rem;
+            color: #cccccc;
+            margin-top: 0.3rem;
+        }
+        .delayed-text {
+            margin: 40px auto;
+            font-size: 1.2rem;
+            color: #aaaaaa;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+        .delayed-text.visible { opacity: 1; }
+        .glass-card {
+            background: white;
+            border: 1px solid #9e9e9e;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 28px 20px;
+            text-align: left;
+            transition: opacity 0.4s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: scale(0.97);
+        }
+        .glass-card.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .glass-card h3 {
+            color: #2a2a2a;
+            margin-top: 0;
+            text-align: center;
+        }
+        .glass-card label {
+            color: #444444;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: block;
+            margin-top: 10px;
+        }
+        .glass-card input, .glass-card select {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0 10px 0;
+            background: #f9f9f9;
+            border: 1px solid #bbb;
+            border-radius: 8px;
+            font-family: monospace;
+            color: #111;
+        }
+        .glass-card input:focus, .glass-card select:focus {
+            outline: none;
+            border-color: #6c6c6c;
+        }
+        .glass-card button {
+            background: #6c6c6c;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            margin: 8px 8px 0 0;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .glass-card button:hover { background: #4a4a4a; }
+        .error-message {
+            color: #b33;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .avatar-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #444;
+            overflow: hidden;
+        }
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .loader {
+            border: 3px solid #aaa;
+            border-top: 3px solid #3a3a3a;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .quote-line {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #555;
+            margin: 8px 0;
+            text-align: center;
+        }
+        .temp-message {
+            background: white;
+            border: 1px solid #6c6c6c;
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            color: #2a2a2a;
+            font-family: monospace;
+            text-align: center;
+        }
+        .info-message {
+            color: #666;
+            font-size: 0.7rem;
+            margin: 5px 0 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Penumbra Solutions</h1>
+<div class="subtitle">Управляемая тишина для сложных миров.</div>
+
+<div id="dynamicArea">
+    <div class="delayed-text" id="accessText">Для доступа к системе необходимо авторизоваться</div>
+</div>
+
+<div id="formContainer"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB4c624YTSRL68skj3SwRku5lsI_c4EyPU",
+        authDomain: "penumbra-test.firebaseapp.com",
+        projectId: "penumbra-test",
+        storageBucket: "penumbra-test.firebasestorage.app",
+        messagingSenderId: "229849130101",
+        appId: "1:229849130101:web:e06ead8bfe40b4df43443c",
+        measurementId: "G-40NFHXQ0HQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    const formContainer = document.getElementById('formContainer');
+    const accessTextEl = document.getElementById('accessText');
+
+    let textVisible = false;
+    let currentUser = null;
+    let emailVerifInterval = null;
+
+    // ----- Контент для цитат -----
+    const rulesTexts = [
+        "Если увидели, как работник опрыскивает цветок — задержите дыхание на 7 секунд.",
+        "Не смотрите в коридор, если оттуда доносится шёпот.",
+        "Если Крис спросила «Какой сегодня день?» — назовите вчерашнюю дату.",
+        "В лаунж-зоне «Эхо» запрещено аплодировать.",
+        "Если Эри сказала «Подождите минуту» — ждите ровно 90 секунд.",
+        "Не пейте в баре «Эхо» ничего, кроме того, что предложила Крис.",
+        "Не трогайте кристаллы на стойке у Крис. Особенно третий слева."
+    ];
+
+    const rumorsTexts = [
+        "Эри — бывший клиент, который так и не смог покинуть агентство.",
+        "В архиве есть дело клиента, укравшего пыльцу теней.",
+        "Крис умеет готовить коктейль, после которого клиент забывает свою внешность.",
+        "У каждого сотрудника в архиве лежит запасное имя. Настоящее они забывают при приёме.",
+        "В зале ожидания иногда меняется количество дверей."
+    ];
+
+    const rumorPrefixes = [
+        "Слух:", "Говорят,", "Поговаривают,", "Шепчутся,", "Ходят слухи,", "Слух:"
+    ];
+
+    function getRandomQuote() {
+        const isRule = Math.random() < 0.5;
+        if (isRule && rulesTexts.length) {
+            return rulesTexts[Math.floor(Math.random() * rulesTexts.length)];
+        } else {
+            let rumor = rumorsTexts[Math.floor(Math.random() * rumorsTexts.length)];
+            rumor = rumor.charAt(0).toLowerCase() + rumor.slice(1);
+            const prefix = rumorPrefixes[Math.floor(Math.random() * rumorPrefixes.length)];
+            return `${prefix} ${rumor}`;
+        }
+    }
+
+    // ----- Вспомогательные функции -----
+    function showTemporaryMessage(text, duration = 2000) {
+        const oldMsg = document.querySelector('.temp-message');
+        if (oldMsg) oldMsg.remove();
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'temp-message';
+        msgDiv.innerText = text;
+        formContainer.prepend(msgDiv);
+        setTimeout(() => msgDiv.remove(), duration);
+    }
+
+    function clearContainer() {
+        if (emailVerifInterval) clearInterval(emailVerifInterval);
+        formContainer.innerHTML = '';
+    }
+
+    // Функция перенаправления на основной сайт
+    function redirectToMain() {
+        window.location.href = 'main.html';
+    }
+
+    function showApprovedAndRedirect(username) {
+        clearContainer();
+        const approvedDiv = document.createElement('div');
+        approvedDiv.className = 'temp-message';
+        approvedDiv.innerText = '✓ Одобрено. Перенаправление...';
+        formContainer.appendChild(approvedDiv);
+        setTimeout(() => {
+            redirectToMain();
+        }, 1500);
+    }
+
+    function showLoadingScreen(username) {
+        clearContainer();
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'glass-card visible';
+        loadingDiv.style.maxWidth = '450px';
+        loadingDiv.innerHTML = `
+            <h3>Ожидание одобрения</h3>
+            <div class="loader"></div>
+            <div id="quoteContainer" style="min-height: 80px; margin-top: 20px;"></div>
+            <div class="info-message" style="text-align:center;">Администратор проверяет ваши данные</div>
+        `;
+        formContainer.appendChild(loadingDiv);
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteEl = document.createElement('div');
+        quoteEl.className = 'quote-line';
+        quoteContainer.appendChild(quoteEl);
+        let intervalId;
+        function updateQuote() { quoteEl.textContent = getRandomQuote(); }
+        updateQuote();
+        intervalId = setInterval(updateQuote, 5000);
+        setTimeout(() => {
+            clearInterval(intervalId);
+            updateDoc(doc(db, "users", currentUser.uid), { approved: true }).then(() => {
+                showApprovedAndRedirect(username);
+            }).catch(() => {
+                showApprovedAndRedirect(username);
+            });
+        }, 30000);
+    }
+
+    async function isNicknameUnique(nick) {
+        const q = query(collection(db, "users"), where("nickname", "==", nick));
+        const snap = await getDocs(q);
+        return snap.empty;
+    }
+
+    async function showProfileForm() {
+        clearContainer();
+        let avatarBase64 = null;
+        let isSubmitting = false;
+
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.id = 'profileCard';
+        card.innerHTML = `
+            <h3>Тень принимает новую форму</h3>
+            <p style="font-size:0.9rem; color:#444;">Прежде чем войти, укажите, как к вам обращаться.</p>
+            <label>Имя пользователя (никнейм) *</label>
+            <input type="text" id="nickname" placeholder="Ваш псевдоним" maxlength="20">
+            <div id="nicknameError" class="error-message"></div>
+            <label>Дата рождения * (только 16+)</label>
+            <input type="date" id="birthdate">
+            <div id="birthError" class="error-message"></div>
+            <label>Пол *</label>
+            <select id="gender">
+                <option value="male">Мужской</option>
+                <option value="female">Женский</option>
+                <option value="secret">Засекречено</option>
+            </select>
+            <label>Код приглашения (необязательно)</label>
+            <input type="text" id="inviteCode" placeholder="Если есть">
+            <label>Аватарка (загрузите изображение)</label>
+            <div class="avatar-upload">
+                <div class="avatar-preview" id="avatarPreview">🖤</div>
+                <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/gif">
+            </div>
+            <div class="info-message">Рекомендуется квадратное изображение. Максимум 2 МБ.</div>
+            <div style="margin-top: 20px;">
+                <button id="submitProfile">Отправить заявку</button>
+                <button id="changeAccountBtn">Изменить аккаунт</button>
+            </div>
+            <div id="profileError" class="error-message"></div>
+        `;
+        formContainer.appendChild(card);
+        setTimeout(() => card.classList.add('visible'), 10);
+
+        const nicknameInput = document.getElementById('nickname');
+        const birthInput = document.getElementById('birthdate');
+        const avatarInput = document.getElementById('avatarInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const submitBtn = document.getElementById('submitProfile');
+        const changeBtn = document.getElementById('changeAccountBtn');
+        const profileError = document.getElementById('profileError');
+
+        avatarInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.size <= 2 * 1024 * 1024) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    avatarBase64 = ev.target.result;
+                    avatarPreview.innerHTML = `<img src="${avatarBase64}" style="width:100%;height:100%;border-radius:50%;">`;
+                };
+                reader.readAsDataURL(file);
+            } else if (file) {
+                profileError.innerText = 'Файл слишком большой (максимум 2 МБ)';
+            }
+        });
+
+        function isAgeValid(birthDateStr) {
+            const birth = new Date(birthDateStr);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age >= 16;
+        }
+
+        submitBtn.addEventListener('click', async () => {
+            if (isSubmitting) return;
+            profileError.innerText = '';
+            const nickname = nicknameInput.value.trim();
+            const birthdate = birthInput.value;
+            const gender = document.getElementById('gender').value;
+            const inviteCode = document.getElementById('inviteCode').value.trim();
+
+            if (!nickname || nickname.length < 3 || nickname.length > 20) {
+                profileError.innerText = 'Никнейм должен быть от 3 до 20 символов';
+                return;
+            }
+            if (!/^[a-zA-Zа-яА-Я0-9_.]+$/.test(nickname)) {
+                profileError.innerText = 'Никнейм может содержать буквы, цифры, подчёркивание и точку';
+                return;
+            }
+            if (!birthdate) {
+                profileError.innerText = 'Укажите дату рождения';
+                return;
+            }
+            if (!isAgeValid(birthdate)) {
+                profileError.innerText = 'Вам должно быть не менее 16 лет';
+                return;
+            }
+            const unique = await isNicknameUnique(nickname);
+            if (!unique) {
+                profileError.innerText = 'Этот никнейм уже занят';
+                return;
+            }
+
+            isSubmitting = true;
+            submitBtn.disabled = true;
+
+            const userData = {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                nickname: nickname,
+                birthdate: birthdate,
+                gender: gender,
+                inviteCode: inviteCode || null,
+                avatar: avatarBase64 || null,
+                approved: false,
+                submittedAt: new Date().toISOString(),
+                balance: 100,
+                trustLevel: 1,
+                hasAcceptedRules: false
+            };
+            try {
+                await setDoc(doc(db, "users", currentUser.uid), userData);
+                showLoadingScreen(nickname);
+            } catch (err) {
+                profileError.innerText = 'Ошибка сохранения: ' + err.message;
+                submitBtn.disabled = false;
+                isSubmitting = false;
+            }
+        });
+
+        changeBtn.addEventListener('click', () => signOut(auth));
+    }
+
+    function showEmailVerificationScreen(user) {
+        clearContainer();
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.id = 'verifyCard';
+        card.innerHTML = `
+            <h3>Подтверждение почты</h3>
+            <p style="color:#444;">На адрес <strong>${user.email}</strong> отправлено письмо.</p>
+            <p style="color:#444;">Перейдите по ссылке в письме, затем нажмите:</p>
+            <div>
+                <button id="resendBtn">Отправить письмо ещё раз</button>
+                <button id="verifiedBtn">Я подтвердил</button>
+                <button id="changeEmailBtn">Изменить email</button>
+            </div>
+            <div id="verifyMsg" class="error-message"></div>
+        `;
+        formContainer.appendChild(card);
+        setTimeout(() => card.classList.add('visible'), 10);
+
+        const resendBtn = document.getElementById('resendBtn');
+        const verifiedBtn = document.getElementById('verifiedBtn');
+        const changeBtn = document.getElementById('changeEmailBtn');
+        const msgDiv = document.getElementById('verifyMsg');
+
+        resendBtn.onclick = async () => {
+            try {
+                await sendEmailVerification(user);
+                msgDiv.innerText = 'Письмо отправлено. Проверьте почту.';
+                msgDiv.style.color = '#2a6b2a';
+                setTimeout(() => msgDiv.innerText = '', 3000);
+            } catch (err) {
+                msgDiv.innerText = err.message;
+            }
+        };
+
+        verifiedBtn.onclick = async () => {
+            await user.reload();
+            if (user.emailVerified) {
+                if (emailVerifInterval) clearInterval(emailVerifInterval);
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (!userDoc.exists()) showProfileForm();
+                else if (userDoc.data().approved === true) redirectToMain();
+                else showLoadingScreen(userDoc.data().nickname);
+            } else {
+                msgDiv.innerText = 'Email ещё не подтверждён. Перейдите по ссылке в письме.';
+            }
+        };
+
+        changeBtn.onclick = () => signOut(auth);
+
+        emailVerifInterval = setInterval(async () => {
+            if (user) {
+                await user.reload();
+                if (user.emailVerified) {
+                    clearInterval(emailVerifInterval);
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (!userDoc.exists()) showProfileForm();
+                    else if (userDoc.data().approved === true) redirectToMain();
+                    else showLoadingScreen(userDoc.data().nickname);
+                }
+            }
+        }, 3000);
+    }
+
+    async function handleRegister(email, password) {
+        try {
+            const userCred = await createUserWithEmailAndPassword(auth, email, password);
+            await sendEmailVerification(userCred.user);
+            showEmailVerificationScreen(userCred.user);
+        } catch (err) {
+            const errorDiv = document.getElementById('loginError');
+            if (errorDiv) errorDiv.innerText = err.message;
+        }
+    }
+
+    async function handleLogin(email, password) {
+        try {
+            const userCred = await signInWithEmailAndPassword(auth, email, password);
+            if (!userCred.user.emailVerified) {
+                showEmailVerificationScreen(userCred.user);
+            } else {
+                const userDoc = await getDoc(doc(db, "users", userCred.user.uid));
+                if (!userDoc.exists()) showProfileForm();
+                else if (userDoc.data().approved === true) redirectToMain();
+                else showLoadingScreen(userDoc.data().nickname);
+            }
+        } catch (err) {
+            const errorDiv = document.getElementById('loginError');
+            if (errorDiv) errorDiv.innerText = err.message;
+        }
+    }
+
+    async function handleGoogleLogin() {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const userDoc = await getDoc(doc(db, "users", result.user.uid));
+            if (!userDoc.exists()) showProfileForm();
+            else if (userDoc.data().approved === true) redirectToMain();
+            else showLoadingScreen(userDoc.data().nickname);
+        } catch (err) {
+            const errorDiv = document.getElementById('loginError');
+            if (errorDiv) errorDiv.innerText = err.message;
+        }
+    }
+
+    function showLoginForm() {
+        clearContainer();
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.id = 'loginCard';
+        card.innerHTML = `
+            <h3>Авторизация</h3>
+            <input type="email" id="loginEmail" placeholder="Электронная почта">
+            <input type="password" id="loginPassword" placeholder="Пароль">
+            <div>
+                <button id="loginBtn">Войти</button>
+                <button id="registerBtn">Регистрация</button>
+                <button id="googleLoginBtn">Войти через Google</button>
+            </div>
+            <div id="loginError" class="error-message"></div>
+        `;
+        formContainer.appendChild(card);
+        setTimeout(() => card.classList.add('visible'), 10);
+
+        const emailInp = document.getElementById('loginEmail');
+        const pwdInp = document.getElementById('loginPassword');
+        const errorDiv = document.getElementById('loginError');
+
+        document.getElementById('loginBtn').onclick = () => handleLogin(emailInp.value, pwdInp.value);
+        document.getElementById('registerBtn').onclick = () => handleRegister(emailInp.value, pwdInp.value);
+        document.getElementById('googleLoginBtn').onclick = () => handleGoogleLogin();
+    }
+
+    setTimeout(() => { if (accessTextEl) accessTextEl.classList.add('visible'); }, 2000);
+    if (accessTextEl) {
+        accessTextEl.addEventListener('transitionend', (e) => {
+            if (e.propertyName === 'opacity' && accessTextEl.classList.contains('visible')) textVisible = true;
+        });
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            if (accessTextEl) accessTextEl.style.opacity = '0';
+            showTemporaryMessage('Вы авторизованы в системе', 2000);
+            if (!user.emailVerified && !user.providerData.some(p => p.providerId === 'google.com')) {
+                showEmailVerificationScreen(user);
+            } else {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (!userDoc.exists()) showProfileForm();
+                else if (userDoc.data().approved === true) redirectToMain();
+                else showLoadingScreen(userDoc.data().nickname);
+            }
+        } else {
+            currentUser = null;
+            if (textVisible || (accessTextEl && accessTextEl.classList.contains('visible'))) showLoginForm();
+            else {
+                const check = setInterval(() => {
+                    if (textVisible || (accessTextEl && accessTextEl.classList.contains('visible'))) {
+                        clearInterval(check);
+                        showLoginForm();
+                    }
+                }, 200);
+            }
+        }
+    });
+</script>
+</body>
+</html>
