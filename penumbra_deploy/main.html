@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Penumbra Solutions — тест</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            background: #0a0a0a;
+            font-family: monospace;
+        }
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 280px;
+            background: #0a0a0a;
+            border-right: 1px solid #2a2a2a;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+        .sidebar .logo {
+            text-align: center;
+            font-size: 1.4rem;
+            letter-spacing: 4px;
+            color: #fff;
+            padding: 20px 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .sidebar nav ul { list-style: none; padding: 0; }
+        .sidebar nav li { margin: 12px 20px; }
+        .sidebar nav a { color: #ccc; text-decoration: none; font-size: 1.1rem; display: block; }
+        .sidebar nav a:hover { color: white; }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .top-bar {
+            padding: 20px 30px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .site-title { font-size: 1.8rem; color: #fff; }
+        #pageContent {
+            flex: 1;
+            overflow: hidden;
+            background: white;
+        }
+        #pageContent.fullscreen { height: 100%; }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div class="sidebar">
+        <div class="logo">PENUMBRA</div>
+        <nav><ul><li><a href="#" id="waitingLink">Зона ожидания</a></li></ul></nav>
+    </div>
+    <div class="main-content">
+        <div class="top-bar"><div class="site-title">Penumbra Solutions (тест)</div></div>
+        <div id="pageContent"></div>
+    </div>
+</div>
+<script>
+    async function loadWaiting() {
+        const contentDiv = document.getElementById('pageContent');
+        try {
+            const response = await fetch('views/waiting.html');
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const html = await response.text();
+            contentDiv.innerHTML = html;
+            contentDiv.classList.add('fullscreen');
+        } catch (err) {
+            contentDiv.innerHTML = `<div style="padding:20px; color:red;">Ошибка загрузки waiting.html: ${err.message}<br>Убедись, что файл лежит в папке views/</div>`;
+        }
+    }
+    document.getElementById('waitingLink').onclick = (e) => { e.preventDefault(); loadWaiting(); };
+    loadWaiting();
+</script>
+</body>
+</html>
